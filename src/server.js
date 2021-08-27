@@ -18,12 +18,26 @@ const handleListen = () => {
 const server = http.createServer(app); //http server
 const wss = new WebSocket.Server({ server }); //wss +http on the same port!
 
-wss.on("connection", (socket) => { // listening to "connection" event
+const sockets = []; //fake database
+wss.on("connection", (socket) => {
+  // listening to "connection" event
   // console.log(socket)
+  sockets.push(socket);
+  socket["nickname"] = "anonymous";
   console.log("Connected to Browser ✔");
   socket.on("close", () => console.log("Disconnected from Browser ✔"));
-  socket.on("mesage", (message) => {
-    console.log(message);
+  socket.on("message", (message) => {
+    const parsedMessage = JSON.parse(message);
+    switch (parsedMessage.type) {
+      case "new_message":
+        sockets.forEach((aSocket) =>
+          aSocket.send(`${socket.nickname}: ${parsedMessage.payload}`)
+        );
+        break;
+      case "nickname":
+        socket["nickname"] = parsedMessage.payload; // socket is an object
+        break;
+    }
   });
   socket.send("hello!");
 });
