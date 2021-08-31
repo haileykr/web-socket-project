@@ -23,11 +23,9 @@ function showRoom() {
   room.hidden = false;
   const h3 = room.querySelector("h3");
   h3.innerText = `Room ${roomName}`;
-  const messageForm = room.querySelector("#msg");
-  const nicknameForm = room.querySelector("#nickname");
+  const messageForm = room.querySelector("#message");
 
   messageForm.addEventListener("submit", handleMessageSubmit);
-  nicknameForm.addEventListener("submit", handleNicknameSubmit);
 }
 
 function addMessage(message) {
@@ -39,31 +37,46 @@ function addMessage(message) {
 
 function handleRoomSubmit(event) {
   event.preventDefault();
-  const input = form.querySelector("#message input");
+  const nickname = welcome.querySelector("#nickname ");
+  socket.emit("nickname", nickname.value);
+
+  const input = form.querySelector("#roomname");
   roomName = input.value;
-  socket.emit(
-    "enter_room",
-    roomName,
-    showRoom
-  ); // more than just a message. can transfer multiple data, in many various types
+  socket.emit("enter_room", roomName, showRoom); // more than just a message. can transfer multiple data, in many various types
 }
 
-function handleNicknameSubmit(event) {
-  event.preventDefault();
-  const input = room.querySelector("#nickname input");
-  const value = input.value;
-}
 form.addEventListener("submit", handleRoomSubmit);
 
-socket.on("welcome", () => {
-  addMessage("Someone joined");
+socket.on("welcome", (nickname, newCount) => {
+  addMessage(`${nickname} has joined the room!`);
+
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${newCount})`;
 });
 
-socket.on("bye", () => {
-  addMessage("Someone left");
+socket.on("bye", (nickname, newCount) => {
+  addMessage(`${nickname} has left the room!`);
+
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${newCount})`;
 });
 
 socket.on("new_message", addMessage);
+
+socket.on("room_change", (publicRooms) => {
+  const roomListContainer = welcome.querySelector("ul");
+  roomListContainer.innerHTML = "";
+
+  if (publicRooms.length === 0) {
+    return;
+  }
+  publicRooms.forEach((room) => {
+    const li = document.createElement("li");
+    li.innerText = room;
+
+    roomListContainer.append(li);
+  });
+});
 
 // const messageList = document.querySelector("ul");
 // const nicknameForm = document.querySelector("#nickname");
