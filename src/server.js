@@ -1,6 +1,8 @@
 import http from "http";
 // import WebSocket from "ws";
-import SocketIO from "socket.io";
+// import SocketIO from "socket.io";
+import { Server } from "socket.io";
+import { instrument } from "@socket.io/admin-ui";
 import express from "express";
 
 const app = express();
@@ -17,7 +19,16 @@ const handleListen = () => {
 };
 const httpServer = http.createServer(app); //http server
 // const wss = new WebSocket.Server({ httpServer }); //wss +http on the same port!
-const io = SocketIO(httpServer);
+// const io = SocketIO(httpServer);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ["https://admin.socket.io"],
+    credentials: true,
+  },
+});
+instrument(io, {
+  auth: false,
+});
 
 function publicRooms() {
   const {
