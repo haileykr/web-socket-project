@@ -23,7 +23,6 @@ async function getMedia() {
     console.log(e);
   }
 }
-
 getMedia();
 
 function handleMuteClick() {
@@ -38,17 +37,17 @@ function handleMuteClick() {
 
 function handleCameraClick() {
   if (!cameraOn) {
-    cameraBtn.innerText = "Turn Cam On";
-    cameraOn = false;
-  } else {
     cameraBtn.innerText = "Turn Cam Off";
     cameraOn = true;
+  } else {
+    cameraBtn.innerText = "Turn Cam On";
+    cameraOn = false;
   }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
-
 cameraBtn.addEventListener("click", handleCameraClick);
+
 /**
  * Chat Part
  */
