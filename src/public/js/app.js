@@ -1,11 +1,11 @@
 const socket = io();
-
 /**
  * Video Part
  */
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
+const cameraSelect = document.getElementById("cameras");
 
 let myStream;
 let muted = false;
@@ -13,8 +13,15 @@ let cameraOn = false;
 
 async function getCameras() {
   try {
-    const devices = await naviogator.mediaDevices.enumuerateDevices();
+    const devices = await navigator.mediaDevices.enumerateDevices();
     console.log(devices);
+    const cameras = devices.filter((device) => device.kind === "videoinput");
+    cameras.forEach((camera) => {
+      const option = document.createElement("option");
+      option.value = camera.deviceId;
+      option.innerText = camera.label;
+      cameraSelect.appendChild(option);
+    });
   } catch (e) {
     console.log(e);
   }
@@ -27,7 +34,7 @@ async function getMedia() {
       video: true,
     });
     myFace.srcObject = myStream;
-    await getCameras;
+    await getCameras();
   } catch (e) {
     console.log(e);
   }
