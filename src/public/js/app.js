@@ -6,7 +6,6 @@ const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraSelect = document.getElementById("cameras");
-
 const call = document.getElementById("call");
 
 call.hidden = true;
@@ -15,13 +14,13 @@ let myStream;
 let muted = false;
 let cameraOn = false;
 let roomName;
+let myPeerConnection; // so that it's accessible everywhere
 
 async function getCameras() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const cameras = devices.filter((device) => device.kind === "videoinput");
     const currentCam = myStream.getVideoTracks()[0];
-
     cameras.forEach((camera) => {
       const option = document.createElement("option");
       option.value = camera.deviceId;
@@ -92,7 +91,6 @@ function handleCameraChange() {
 
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
-
 cameraSelect.addEventListener("input", handleCameraChange);
 
 const welcome = document.getElementById("welcome");
@@ -102,11 +100,13 @@ async function startMedia() {
   welcome.hidden = true;
   call.hidden = false;
   await getMedia();
+  makeConnection();
 }
 
-function handleWelcomeSubmit(event) {
+async function handleWelcomeSubmit(event) {
   event.preventDefault();
   const input = welcomeForm.querySelector("input");
+  await startMedia();
   socket.emit("join_room", input.value, startMedia);
   roomName = input.value;
   input.value = "";
@@ -114,9 +114,35 @@ function handleWelcomeSubmit(event) {
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 // Socket Code
-socket.on("welcome", () => {
+socket.on("welcome", async () => {
   console.log("Somebody joined");
+  const offer = await myPeerConnection.createOffer();
+  myPeerConnection.setLocalDescription(offer);
+  console.log("sent the offer");
+  socket.emit("offer", offer, roomName); // sending the offer to  roomName (via the server)
+}); //runs on Peer A, after Peer B joins
+
+socket.on("offer", async (offer) => {
+  myPeerConnection.setRemoteDescription(offer);
+
+  const answer = await myPeerConnection.createAnswer();
+  myPeerConnection.setLocalDescription(answer);
+  socket.emit("answer", answer, roomName);
+}); //runs on Peer B
+
+socket.on("answer", (answer) => {
+  myPeerConnection.setRemoteDescription(answer);
 });
+
+// RTC Code
+function makeConnection() {
+  myPeerConnection = new RTCPeerConnection();
+  console.log(myStream.getTracks());
+  myStream.getTracks().forEach((track) => {
+    myPeerConnection.addTrack(track, myStream);
+  });
+}
+
 /**
  * Chat Part
  */
