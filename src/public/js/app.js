@@ -123,24 +123,50 @@ socket.on("welcome", async () => {
 }); //runs on Peer A, after Peer B joins
 
 socket.on("offer", async (offer) => {
+  console.log("received the offer");
   myPeerConnection.setRemoteDescription(offer);
-
   const answer = await myPeerConnection.createAnswer();
   myPeerConnection.setLocalDescription(answer);
   socket.emit("answer", answer, roomName);
+  console.log("sent the answer");
 }); //runs on Peer B
 
 socket.on("answer", (answer) => {
+  console.log("received the answer");
   myPeerConnection.setRemoteDescription(answer);
+});
+
+socket.on("ice", (ice) => {
+  console.log("received candidate");
+  myPeerConnection.addIceCandidate(ice);
 });
 
 // RTC Code
 function makeConnection() {
   myPeerConnection = new RTCPeerConnection();
+  myPeerConnection.addEventListener("icecandidate", handleIce);
+  myPeerConnection.addEventListener("addstream", handleAddStream);
   console.log(myStream.getTracks());
   myStream.getTracks().forEach((track) => {
     myPeerConnection.addTrack(track, myStream);
   });
+}
+
+function handleIce(data) {
+  socket.emit("ice", data.candidate, roomName);
+  console.log("sent candidate");
+
+  // console.log("got ice candidate");
+  // console.log(data);
+}
+
+function handleAddStream(data) {
+  const peerStream = document.getElementById("peerStream");
+  console.log("got a stream from peer");
+  console.log("Peer's stream", data.stream);
+  console.log("My Stream", myStream);
+
+  peerStream.srcObject = data.stream;
 }
 
 /**
