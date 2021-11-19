@@ -85,8 +85,18 @@ function handleCameraClick() {
   }
 }
 
-function handleCameraChange() {
-  getMedia(cameraSelect.value); // id
+async function handleCameraChange() {
+  await getMedia(cameraSelect.value); // id
+
+  if (myPeerConnection) {
+    const videoTrack = myStream.getVideoTracks()[0]; // newly created stream (2 lines above!)
+    console.log(myPeerConnection.getSenders());
+    const videoSenders = myPeerConnection
+      .getSenders()
+      .find((sender) => sender.track.kind === "video");
+    videoSenders.replaceTrack(videoTrack);
+    console.log(videoSenders);
+  }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
